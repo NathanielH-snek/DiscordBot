@@ -10,11 +10,17 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from discord import FFmpegPCMAudio
 from pytube import YouTube
-from youtube_dl import YoutubeDL
+import youtube_dl
 from requests import get
 from discord.utils import get
+
 import dice
 import asyncio
+import functools
+from typing import Dict
+import asyncio
+
+from utilsModels import Playlist
 
 #Create Spell Class
 class Spell:
@@ -62,15 +68,6 @@ Arcane_Lock = Spell('Arcane Lock' , '1 action' , 'Touch' , 'V,S,M' , 'Until disp
 Lesser_Restoration = Spell('Lesser Restoration' , '1 action' , 'Touch' , 'V,S' , 'Instantaneous' , "You touch a creature and can end either one disease or one condition afflicting it. The condition can be blinded, deafened, paralyzed, or poisoned.")
 Mirror_Image = Spell('Mirror Image' , '1 action' , 'Self' , 'V,S' , '1 minute' , "Three illusory duplicates of yourself appear in your space. Until the spell ends, the duplicates move with you and mimic your actions, shifting position so it's impossible to track which image is real. You can use your action to dismiss the illusory duplicates. Each time a creature targets you with an attack during the spell's duration, roll a d20 to determine whether the attack instead targets one of your duplicates. If you have three duplicates, you must roll a 6 or higher to change the attack's target to a duplicate. With two duplicates, you must roll an 8 or higher. With one duplicate, you must roll an 11 or higher. A duplicate's AC equals 10 + your Dexterity modifier. If an attack hits a duplicate, the duplicate is destroyed. A duplicate can be destroyed only by an attack that hits it. It ignores all other damage and effects. The spell ends when all three duplicates are destroyed. A creature is unaffected by this spell if it can't see, if it relies on senses other than sight, such as blindsight, or if it can perceive illusions as false, as with truesight.")
 
-#Get videos from links or from youtube search
-def search(query):
-    arg = query
-    with YoutubeDL({'format': 'bestaudio', 'noplaylist':'True'}) as ydl:
-        try: requests.get(arg)
-        except: info = ydl.extract_info(f"ytsearch:{arg}", download=False)['entries'][0]
-        else: info = ydl.extract_info(arg, download=False)
-    return (info, info['formats'][0]['url'])
-
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
@@ -78,10 +75,94 @@ GUILD = os.getenv('DISCORD_GUILD')
 intents = discord.Intents().all()
 bot = commands.Bot(command_prefix = '$', intents=intents)
 
+class Music(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.playlists: Dict[int, Playlist] = {}
+
+    async def check_play(self, ctx: commands.Context):
+        client = ctx.voice_client
+        while client and client.is_playing():
+            await asyncio.sleep(1)
+        
+        self.bot.dispatch("track_end", ctx)
+
+    #List Playlist Method FIX WIP
+    @commands.command(name = 'playlist')
+    async def playlist(self, ctx: commands.Context):
+        playlist = self.playlists.get(ctx.guild.id)
+        for key,value in playlist():
+            await ctx.send(key, ':', value)
+    
+    #Remove an Item From Playlist Method FIX WIP
+    @commands.command(name = 'remove')
+    async def remove(self, ctx: commands.Context, arg: int):
+        playlist = self.playlists.get(ctx.guild.id)
+        int = arg
+        playlist.pop(int)
+        await ctx.send(f"Playlist item {int} removed from playlist")
+
+    @commands.command(name = 'play')
+    async def play(self, ctx: commands.Context, *, url: str):
+        if ctx.voice_client is None:
+            voice_channel = ctx.author.voice.channel
+            if ctx.author.voice is None:
+                await ctx.send("`You are not in a voice channel!`")
+            if (ctx.author.voice):
+                await voice_channel.connect()
+        else: 
+            pass
+        FFMPEG_OPTIONS = {'before_options':'-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options' : '-vn'}
+        YDL_OPTIONS = {'format':'bestaudio', 'default_search':'auto'}
+
+        with youtube_dl.YoutubeDL(YDL_OPTIONS) as ydl:
+            info = ydl.extract_info(url, download=False)
+
+            if 'entries' in info:
+                url2 = info['entries'][0]['formats'][0]['url']
+                title = info['entries'][0]['title']
+            elif 'formats' in  info:
+                url2 = info['formats'][0]['url']
+                title = info['title']
+            
+            source = await discord.FFmpegOpusAudio.from_probe(url2, **FFMPEG_OPTIONS)
+            self.bot.dispatch("play_command", ctx, source, title)
+        
+
+    @commands.Cog.listener()
+    async def on_play_command(self, ctx: commands.Context, song, title: str):
+        playlist = self.playlists.get(ctx.guild.id, Playlist(ctx.guild.id))
+        self.playlists[ctx.guild.id] = playlist
+        to_add = (song, title)
+        playlist.add_song(to_add)
+        await ctx.send(f"`Added {title} to the playlist.`")
+        if not ctx.voice_client.is_playing():
+            self.bot.dispatch("track_end", ctx)
+
+    @commands.Cog.listener()
+    async def on_track_end(self, ctx: commands.Context):
+        playlist = self.playlists.get(ctx.guild.id)
+        if playlist and not playlist.is_empty:
+            song, title = playlist.get_song()
+        else:
+            await ctx.send("No more songs in the playlist")
+            return await ctx.guild.voice_client.disconnect()
+        await ctx.send(f"Now playing: {title}")
+        
+        ctx.guild.voice_client.play(song, after=functools.partial(lambda x: self.bot.loop.create_task(self.check_play(ctx))))
+        # for the above code, instead of functools.partial, you could also create_task on the next line, I just find using the `after` kwargs much better
+    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print('MusicPlayer module has successfully been initialized.')
+
+async def setup(bot):
+    await bot.add_cog(Music(bot))
 
 #Startup Tasks, Prints Connected Guild(s) and User(s) in guilds, also loads opus
 @bot.event
 async def on_ready():
+    await setup(bot)
     discord.opus.load_opus('/opt/homebrew/Cellar/opus/1.3.1/lib/libopus.0.dylib')
     for guild in bot.guilds:
          print(
@@ -108,11 +189,11 @@ async def on_message(message):
 @bot.command(name = 'join')
 async def join(ctx):
     if ctx.author.voice is None:
-      return await ctx.send("You are not connected to a voice channel")
+        return await ctx.send("You are not connected to a voice channel")
     else:
-      channel = ctx.author.voice.channel
-      await channel.connect()
-      await ctx.send(f"Connected to voice channel: '{channel}'")
+        channel = ctx.author.voice.channel
+        await channel.connect()
+        await ctx.send(f"Connected to voice channel: '{channel}'")
 
 @bot.command(name = 'leave')
 async def leave(ctx):
@@ -124,61 +205,11 @@ async def leave(ctx):
     else:
         await ctx.send("The bot is not connected to a voice channel.")
 
-
-players = {}
-queue = {}
-def check_queue(id):
-    if queue[id] != []:
-        player = queue[id].pop(0)
-        players[id] = player
-        player.play()
-
-#Play Command: Plays music from search, accepts any length of arguments
-@bot.command(name = 'play')
-async def play(ctx, *, query):
-    server = ctx.message.guild
-    voice_client = ctx.message.guild.voice_client
-    voice_channel = server.voice_client
-    if voice_client.is_connected() == True:
-        FFMPEG_OPTS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-
-        video, source = search(query)
-        voice = get(bot.voice_clients, guild=ctx.guild)
-
-        await ctx.send(f"Now Playing {video['title']}.")
-
-        player = await voice.play(discord.FFmpegPCMAudio(source, **FFMPEG_OPTS), after=lambda x=None: check_queue(server.id))
-        player.start()  
-    elif voice_channel.is_playing() == True: 
-        await ctx.send('Please use the queue function to add more music')
-    else:
-        await ctx.send('Please try the join function first!')
-
-@bot.command(name = 'queue')
-async def queue(ctx, *, query):
-    server = ctx.message.guild
-    FFMPEG_OPTS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-
-    video, source = search(query)
-    voice = get(bot.voice_clients, guild=ctx.guild)
-
-    player = await voice.play(discord.FFmpegPCMAudio(source, **FFMPEG_OPTS), after=lambda: check_queue(server.id))
-    players[server.id] = player
-    if server.id in queue:
-        queue[server.id].append(player)
-        await ctx.send(f"Added to Queue: {video['title']}.")
-    else:
-        queue[server.id] = [player] 
-
-      
-    
-
-
 @bot.command(name = 'pause')
 async def pause(ctx):
     server = ctx.message.guild
     voice_channel = server.voice_client
-    if voice_channel.is_playing() == False:
+    if not voice_channel.is_playing():
         await ctx.send('No music is playing') 
     else:               
         voice_channel.pause()
@@ -188,7 +219,7 @@ async def pause(ctx):
 async def pause(ctx):
     server = ctx.message.guild
     voice_channel = server.voice_client
-    if voice_channel.is_paused() == True:             
+    if voice_channel.is_paused():             
         voice_channel.resume()
         await ctx.send('Music resumed')
     else:
@@ -198,7 +229,7 @@ async def pause(ctx):
 async def stop(ctx):
     server = ctx.message.guild
     voice_channel = server.voice_client
-    if voice_channel.is_playing() == False:
+    if not voice_channel.is_playing():
         await ctx.send('No music is playing') 
     else:               
         voice_channel.stop()
