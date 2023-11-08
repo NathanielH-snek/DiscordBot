@@ -13,6 +13,7 @@ from pytube import YouTube
 import youtube_dl
 from requests import get
 from discord.utils import get
+from discord.ext.commands import CommandNotFound
 import logging
 
 import dice
@@ -77,6 +78,13 @@ async def on_message(message):
         await message.channel.send(response)
     
     await bot.process_commands(message)
+    
+@bot.event
+async def on_command_error(ctx,error):
+    if isinstance(error, CommandNotFound):
+        await ctx.send("Invalid Command: Use '$help' for a list of valid commands")
+        return
+    raise error
 
 #Join Command: Adds bot to voice channel if user is in voice channel
 @bot.command(name = 'join')
