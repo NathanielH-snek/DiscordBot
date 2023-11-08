@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from discord import FFmpegPCMAudio
 from pytube import YouTube
-import youtube_dl
+import yt_dlp
 from requests import get
 from discord.utils import get
 
@@ -87,14 +87,14 @@ class Music(commands.Cog):
         FFMPEG_OPTIONS = {'before_options':'-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options' : '-vn'}
         YDL_OPTIONS = {'format':'bestaudio', 'default_search':'auto'}
 
-        with youtube_dl.YoutubeDL(YDL_OPTIONS) as ydl:
+        with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
             info = ydl.extract_info(url, download=False)
 
             if 'entries' in info:
-                url2 = info['entries'][0]['formats'][0]['url']
+                url2 = info['entries'][0]['url']
                 title = info['entries'][0]['title']
             elif 'formats' in  info:
-                url2 = info['formats'][0]['url']
+                url2 = info['url']
                 title = info['title']
             
             source = await discord.FFmpegOpusAudio.from_probe(url2, **FFMPEG_OPTIONS)

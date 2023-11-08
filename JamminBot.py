@@ -10,10 +10,10 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from discord import FFmpegPCMAudio
 from pytube import YouTube
-import youtube_dl
+import yt_dlp
 from requests import get
 from discord.utils import get
-from discord.ext.commands import CommandNotFound
+from discord.ext.commands import CommandNotFound, CommandInvokeError
 import logging
 
 import dice
