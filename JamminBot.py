@@ -23,6 +23,8 @@ import asyncio
 
 import pandas as pd
 
+from spellchecker import SpellChecker
+
 from utils import Playlist, Music, Spell, Character
 
 df = pd.read_pickle("spells.pkl")
@@ -35,6 +37,15 @@ intents = discord.Intents().all()
 bot = commands.Bot(command_prefix = '$', intents=intents)
 
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+
+
+###
+#TO DO
+#Fix broken stop pause resume methods
+#Accept invalid commands and tell user they are invalid
+#Create help command to list commands
+#Setup to run on rpi (package, etc)
+###
 
 
 async def setup(bot):
@@ -125,7 +136,7 @@ async def roll(ctx, arg):
         str(x)
         await ctx.send(x)
     else:
-       return await ctx.send('Please select a valid number')
+       return await ctx.send('Please select a valid number from the following: \n[20]')
 
 @bot.command(name = 'cast')
 async def cast(ctx, *args):
@@ -142,6 +153,11 @@ async def cast(ctx, *args):
                 list = list + ('{name}: {value}'.format(name=name, value=values) + "\n")
         await ctx.send(list)
     else:
-        await ctx.send('No Such Spell')
+        replacement = ''
+        for word in args:
+            spell = SpellChecker()
+            word = spell.correction(str(word))
+            replacement = replacement + word + ' '
+        await ctx.send("No such spell. Did you mean: '" + replacement + "'?")
 #bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
 bot.run(TOKEN)
