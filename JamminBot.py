@@ -21,8 +21,11 @@ import functools
 from typing import Dict
 import asyncio
 
+import pandas as pd
+
 from utils import Playlist, Music, Spell, Character
 
+df = pd.read_pickle("spells.pkl")
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -95,7 +98,7 @@ async def pause(ctx):
         await ctx.send('Music paused')
 
 @bot.command(name = 'resume')
-async def pause(ctx):
+async def resume(ctx):
     server = ctx.message.guild
     voice_channel = server.voice_client
     if voice_channel.is_paused():             
@@ -114,6 +117,7 @@ async def stop(ctx):
         voice_channel.stop()
         await ctx.send('Music stopped')
 
+#Implement more general dice roll method
 @bot.command(name = 'roll')
 async def roll(ctx, arg):
     if arg == '20':
@@ -126,6 +130,18 @@ async def roll(ctx, arg):
 @bot.command(name = 'cast')
 async def cast(ctx, *args):
     arguments = ' '.join(args)
-    str(arguments)
-
+    spellName = str(arguments).lower()
+    spellName = spellName.replace(" ", "")
+    if df.index.str.contains(spellName, case=False).any(): 
+        #await ctx.send(str(df.loc[spellName]))
+        list = ''
+        for name, values in df.loc[spellName].items():
+            if values.lower() == 'none':
+                continue
+            else:
+                list = list + ('{name}: {value}'.format(name=name, value=values) + "\n")
+        await ctx.send(list)
+    else:
+        await ctx.send('No Such Spell')
 bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
+#bot.run(TOKEN)
