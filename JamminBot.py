@@ -143,5 +143,5 @@ async def cast(ctx, *args):
         await ctx.send(list)
     else:
         await ctx.send('No Such Spell')
-bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
-#bot.run(TOKEN)
+#bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
+bot.run(TOKEN)
