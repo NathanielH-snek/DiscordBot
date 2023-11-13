@@ -26,7 +26,7 @@ import pandas as pd
 
 from spellchecker import SpellChecker
 
-from utils import Playlist, Music, Spell, Character
+from utils import Playlist, Music, Character
 
 df = pd.read_pickle("spells.pkl")
 
@@ -42,8 +42,6 @@ handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'
 
 ###
 #TO DO
-#Fix broken stop pause resume methods
-#Accept invalid commands and tell user they are invalid
 #Create help command to list commands
 #Setup to run on rpi (package, etc)
 ###
@@ -82,39 +80,29 @@ async def on_message(message):
 @bot.event
 async def on_command_error(ctx,error):
     if isinstance(error, CommandNotFound):
-        await ctx.send("Invalid Command: Use '$help' for a list of valid commands")
+        await ctx.send("`Invalid Command: Use '$help' for a list of valid commands`")
         return
     raise error
-
-#Join Command: Adds bot to voice channel if user is in voice channel
-@bot.command(name = 'join')
-async def join(ctx):
-    if ctx.author.voice is None:
-        return await ctx.send("You are not connected to a voice channel")
-    else:
-        channel = ctx.author.voice.channel
-        await channel.connect()
-        await ctx.send(f"Connected to voice channel: '{channel}'")
 
 @bot.command(name = 'leave')
 async def leave(ctx):
     voice_client = ctx.message.guild.voice_client
     if ctx.author.voice is None:
-        return await ctx.send("You are not connected to a voice channel")  
+        return await ctx.send("`You are not connected to a voice channel`")  
     elif voice_client.is_connected():
         await voice_client.disconnect()
     else:
-        await ctx.send("The bot is not connected to a voice channel.")
+        await ctx.send("`The bot is not connected to a voice channel.`")
 
 @bot.command(name = 'pause')
 async def pause(ctx):
     server = ctx.message.guild
     voice_channel = server.voice_client
     if not voice_channel.is_playing():
-        await ctx.send('No music is playing') 
+        await ctx.send('`No music is playing`') 
     else:               
         voice_channel.pause()
-        await ctx.send('Music paused')
+        await ctx.send('`Music paused`')
 
 @bot.command(name = 'resume')
 async def resume(ctx):
@@ -122,29 +110,41 @@ async def resume(ctx):
     voice_channel = server.voice_client
     if voice_channel.is_paused():             
         voice_channel.resume()
-        await ctx.send('Music resumed')
+        await ctx.send('`Music resumed`')
     else:
-        await ctx.send('Nothing to resume!')
+        await ctx.send('`Nothing to resume!`')
 
-@bot.command(name = 'stop')
-async def stop(ctx):
+@bot.command(name = 'skip')
+async def resume(ctx):
     server = ctx.message.guild
     voice_channel = server.voice_client
-    if not voice_channel.is_playing():
-        await ctx.send('No music is playing') 
-    else:               
+    if voice_channel.is_playing():             
         voice_channel.stop()
-        await ctx.send('Music stopped')
+        await ctx.send('`Music skipped`')
+    else:
+        await ctx.send('`Nothing to skip!`')
 
-#Implement more general dice roll method
+
+###Old Method
+#@bot.command(name = 'roll')
+#async def roll(ctx, arg):
+#    if arg == '20':
+#        x = dice.roll('1d20')
+#        str(x)
+#        await ctx.send(x)
+#    else:
+#       return await ctx.send('Please select a valid number from the following: \n[20]')
+   
 @bot.command(name = 'roll')
 async def roll(ctx, arg):
-    if arg == '20':
-        x = dice.roll('1d20')
-        str(x)
-        await ctx.send(x)
+    arg = str(arg) + 't'
+    try:
+        x = dice.roll(arg)
+    except dice.DiceBaseException:
+        await ctx.send('`Invalid dice roll arguments`')
     else:
-       return await ctx.send('Please select a valid number from the following: \n[20]')
+        x = "`" + str(x) + "`"
+        await ctx.send(x)
 
 @bot.command(name = 'cast')
 async def cast(ctx, *args):
@@ -166,6 +166,6 @@ async def cast(ctx, *args):
             spell = SpellChecker()
             word = spell.correction(str(word))
             replacement = replacement + word + ' '
-        await ctx.send("No such spell. Did you mean: '" + replacement + "'?")
+        await ctx.send("`No such spell. Did you mean: '" + replacement + "'?`")
 #bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
 bot.run(TOKEN)
