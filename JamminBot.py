@@ -55,7 +55,8 @@ async def setup(bot):
 async def on_ready():
     await setup(bot)
     #discord.opus.load_opus('/opt/homebrew/Cellar/opus/1.3.1/lib/libopus.0.dylib')
-    discord.opus.load_opus('/opt/homebrew/Cellar/opus/1.4/lib/libopus.0.dylib')
+    if not discord.opus.is_loaded():
+        discord.opus.load_opus('/opt/homebrew/Cellar/opus/1.4/lib/libopus.0.dylib')
     for guild in bot.guilds:
          print(
           f'{bot.user} is connected to the following guild:\n'
