@@ -42,7 +42,6 @@ handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'
 
 ###
 #TO DO
-#Create help command to list commands
 #Setup to run on rpi (package, etc)
 ###
 

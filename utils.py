@@ -34,8 +34,8 @@ class Playlist:
     def add_song(self, song: str):
         #self.queue.put(song)
         self.queue.append(song)
-    def get_song(self):
-        return self.queue.get()
+    #def get_song(self):
+        #return self.queue.get()
 
     def empty_playlist(self):
         self.queue.clear()
@@ -51,9 +51,9 @@ class Playlist:
         #return self.queue.empty()
         return Playlist.check_playlist(self.queue)
 
-    @property
-    def track_count(self):
-        return self.queue.qsize()
+    #@property
+    #def track_count(self):
+        #return self.queue.qsize()
 
 
 class Music(commands.Cog):
@@ -79,7 +79,8 @@ class Music(commands.Cog):
             for i in playlist.queue:
                 song, title = i
                 list.append("`" + str(playlist.queue.index(i)) + ": " + str(title) + "`")
-                await ctx.send(list)
+            list = "\n".join(list)
+            await ctx.send("`" + str(list)[1:-1].replace("'", "") + "`")
     
     #Remove an Item From Playlist Method FIX WIP
     @commands.command(name = 'remove')
