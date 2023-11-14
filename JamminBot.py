@@ -143,7 +143,7 @@ async def roll(ctx, arg):
     except dice.DiceBaseException:
         await ctx.send('`Invalid dice roll arguments`')
     else:
-        x = "`" + str(x) + "`"
+        x = f"`'{x}'`"
         await ctx.send(x)
 
 @bot.command(name = 'cast')
