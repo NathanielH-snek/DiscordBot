@@ -155,7 +155,6 @@ class Music(commands.Cog):
         await ctx.send(f"`Now playing: {title}`")
         
         ctx.guild.voice_client.play(song, after=functools.partial(lambda x: self.bot.loop.create_task(self.check_play(ctx))))
-        # for the above code, instead of functools.partial, you could also create_task on the next line, I just find using the `after` kwargs much better
     
     @commands.Cog.listener()
     async def on_ready(self):
