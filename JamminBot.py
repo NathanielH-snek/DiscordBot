@@ -143,7 +143,7 @@ async def roll(ctx, arg):
     except dice.DiceBaseException:
         await ctx.send('`Invalid dice roll arguments`')
     else:
-        x = f"`'{x}'`"
+        x = f"`{x}`"
         await ctx.send(x)
 
 @bot.command(name = 'cast')
@@ -166,6 +166,6 @@ async def cast(ctx, *args):
             spell = SpellChecker()
             word = spell.correction(str(word))
             replacement = replacement + word + ' '
-        await ctx.send("`No such spell. Did you mean: '" + replacement + "'?`")
+        await ctx.send(f"`No such spell. Did you mean: {replacement}?`")
 #bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
 bot.run(TOKEN)

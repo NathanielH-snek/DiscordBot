@@ -73,14 +73,19 @@ class Music(commands.Cog):
     async def playlist(self, ctx: commands.Context):
         playlist = self.playlists.get(ctx.guild.id)
         list = []
-        if len(playlist.queue) == 0:
+        if playlist is None:
+            await ctx.send("`Nothing in queue`")
+        elif playlist.queue is None:
+            await ctx.send("`Nothing in queue`")
+        elif (len(playlist.queue) == 0):
             await ctx.send("`Nothing in queue`")
         else:
             for i in playlist.queue:
                 song, title = i
-                list.append("`" + str(playlist.queue.index(i)) + ": " + str(title) + "`")
+                list.append(f"`{playlist.queue.index(i)}: {title}`")
             list = "\n".join(list)
-            await ctx.send("`" + str(list)[1:-1].replace("'", "") + "`")
+            list = str(list)[1:-1].replace("'", "")
+            await ctx.send(f"`{list}`")
     
     #Remove an Item From Playlist Method FIX WIP
     @commands.command(name = 'remove')
