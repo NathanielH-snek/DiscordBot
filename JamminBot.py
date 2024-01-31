@@ -28,7 +28,7 @@ from spellchecker import SpellChecker
 
 from utils import Playlist, Music, Character
 
-df = pd.read_pickle("spells.pkl")
+PF = pd.read_pickle("PFspells.pkl")
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -151,10 +151,10 @@ async def cast(ctx, *args):
     arguments = ' '.join(args)
     spellName = str(arguments).lower()
     spellName = spellName.replace(" ", "")
-    if df.index.str.contains(spellName, case=False).any(): 
+    if PF.index.str.contains(spellName, case=False).any(): 
         #await ctx.send(str(df.loc[spellName]))
         list = ''
-        for name, values in df.loc[spellName].items():
+        for name, values in PF.loc[spellName].items():
             if values.lower() == 'none':
                 continue
             else:
@@ -167,5 +167,29 @@ async def cast(ctx, *args):
             word = spell.correction(str(word))
             replacement = replacement + word + ' '
         await ctx.send(f"`No such spell. Did you mean: {replacement}?`")
-#bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
+'''
+#!!!If using this method be sure to change cast to PFcast!!!
+@bot.command(name = 'DNDcast')
+async def cast(ctx, *args):
+    arguments = ' '.join(args)
+    spellName = str(arguments).lower()
+    spellName = spellName.replace(" ", "")
+    if DND.index.str.contains(spellName, case=False).any(): 
+        #await ctx.send(str(df.loc[spellName]))
+        list = ''
+        for name, values in DND.loc[spellName].items():
+            if values.lower() == 'none':
+                continue
+            else:
+                list = list + ('{name}: {value}'.format(name=name, value=values) + "\n")
+        await ctx.send(list)
+    else:
+        replacement = ''
+        for word in args:
+            spell = SpellChecker()
+            word = spell.correction(str(word))
+            replacement = replacement + word + ' '
+        await ctx.send(f"`No such spell. Did you mean: {replacement}?`")
+'''
+bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
 bot.run(TOKEN)

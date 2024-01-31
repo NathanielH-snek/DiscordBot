@@ -19,7 +19,7 @@ import asyncio
 import functools
 from typing import Dict
 import asyncio
-
+from collections import deque
 from queue import Queue
 
 
@@ -28,8 +28,8 @@ class Playlist:
     def __init__(self, id: int):
         self.id = id
         #self.queue = Queue(maxsize=0)
-        self.queue = []
-        self.songNames = []
+        self.queue = deque()
+        #self.songNames = deque()
 
     def add_song(self, song: str):
         #self.queue.put(song)
@@ -40,8 +40,8 @@ class Playlist:
     def empty_playlist(self):
         self.queue.clear()
         
-    def check_playlist(list):
-        if len(list) == 0:
+    def check_playlist(deque):
+        if len(deque) == 0:
             return True
         else:
             return False    
@@ -121,26 +121,48 @@ class Music(commands.Cog):
         YDL_OPTIONS = {'format':'bestaudio', 'default_search':'auto'}
 
         with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
+            await ctx.send(f"`Searching for songs(s)`")
             info = ydl.extract_info(url, download=False)
-
+            titlelist = []
             if 'entries' in info:
-                url2 = info['entries'][0]['url']
-                title = info['entries'][0]['title']
-            elif 'formats' in  info:
+                for i, item in enumerate(info):
+                    if i == 0:
+                        url2 = info['entries'][i]['url']
+                        title = info['entries'][i]['title']
+                        source = await discord.FFmpegOpusAudio.from_probe(url2, **FFMPEG_OPTIONS)
+                        playlist = self.playlists.get(ctx.guild.id, Playlist(ctx.guild.id))
+                        self.playlists[ctx.guild.id] = playlist
+                        to_add = (source, title)
+                        playlist.add_song(to_add)
+                        await ctx.send(f"`Added {title} to the playlist.`")
+                        self.bot.dispatch("play_command", ctx)
+                    else:
+                        url2 = info['entries'][i]['url']
+                        title = info['entries'][i]['title']
+                        source = await discord.FFmpegOpusAudio.from_probe(url2, **FFMPEG_OPTIONS)
+                        playlist = self.playlists.get(ctx.guild.id, Playlist(ctx.guild.id))
+                        self.playlists[ctx.guild.id] = playlist
+                        to_add = (source, title)
+                        playlist.add_song(to_add)
+                        await ctx.send(f"`Added {title} to the playlist.`")
+            elif 'formats' in info:
                 url2 = info['url']
                 title = info['title']
+                source = await discord.FFmpegOpusAudio.from_probe(url2, **FFMPEG_OPTIONS)
+                playlist = self.playlists.get(ctx.guild.id, Playlist(ctx.guild.id))
+                self.playlists[ctx.guild.id] = playlist
+                to_add = (source, title)
+                playlist.add_song(to_add)
+                await ctx.send(f"`Added {title} to the playlist.`")    
+                self.bot.dispatch("play_command", ctx)
             
-            source = await discord.FFmpegOpusAudio.from_probe(url2, **FFMPEG_OPTIONS)
-            self.bot.dispatch("play_command", ctx, source, title)
+            ###NEVER REACHES AWAIT FIX NEEDED?
+            #await ctx.send(f"`Done Adding Songs`")      
+            #self.bot.dispatch("play_command", ctx, source, title)
         
 
     @commands.Cog.listener()
-    async def on_play_command(self, ctx: commands.Context, song, title: str):
-        playlist = self.playlists.get(ctx.guild.id, Playlist(ctx.guild.id))
-        self.playlists[ctx.guild.id] = playlist
-        to_add = (song, title)
-        playlist.add_song(to_add)
-        await ctx.send(f"`Added {title} to the playlist.`")
+    async def on_play_command(self, ctx: commands.Context):
         if not ctx.voice_client.is_playing():
             self.bot.dispatch("track_end", ctx)
 
@@ -151,7 +173,7 @@ class Music(commands.Cog):
             song, title = playlist.queue.pop()
         else:
             await ctx.send("`No more songs in the playlist`")
-            return await ctx.guild.voice_client.disconnect()
+            #return await ctx.guild.voice_client.disconnect()
         await ctx.send(f"`Now playing: {title}`")
         
         ctx.guild.voice_client.play(song, after=functools.partial(lambda x: self.bot.loop.create_task(self.check_play(ctx))))
