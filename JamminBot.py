@@ -28,7 +28,7 @@ from spellchecker import SpellChecker
 
 from utils import Playlist, Music, Character
 
-PF = pd.read_pickle("PFspells.pkl")
+PF = pd.read_pickle("spells.pkl")
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')

@@ -170,7 +170,7 @@ class Music(commands.Cog):
     async def on_track_end(self, ctx: commands.Context):
         playlist = self.playlists.get(ctx.guild.id)
         if playlist and not playlist.is_empty:
-            song, title = playlist.queue.pop()
+            song, title = playlist.queue.popleft()
         else:
             await ctx.send("`No more songs in the playlist`")
             #return await ctx.guild.voice_client.disconnect()
