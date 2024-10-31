@@ -1,32 +1,17 @@
 # JamminBot.py
-from doctest import BLANKLINE_MARKER
-import os
-from smtplib import SMTPAuthenticationError
-from syslog import LOG_USER
-import discord
-import discord.utils
-import requests
-from dotenv import load_dotenv
-from discord.ext import commands
-from discord import FFmpegPCMAudio
-from pytube import YouTube
-import yt_dlp
-from requests import get
-from discord.utils import get
-from discord.ext.commands import CommandNotFound, CommandInvokeError
 import logging
+import os
 
 import dice
-import asyncio
-import functools
-from typing import Dict
-import asyncio
-
+import discord
+import discord.utils
 import pandas as pd
-
+from discord.ext import commands
+from discord.ext.commands import CommandNotFound
+from dotenv import load_dotenv
 from spellchecker import SpellChecker
 
-from utils import Playlist, Music, Character
+from utils import Music
 
 PF = pd.read_pickle("spells.pkl")
 
@@ -69,14 +54,14 @@ async def on_ready():
 async def on_message(message):
     if message.author == bot.user:
         return
-        
+
     if message.content.lower() == 'mike':
         meme_answer = 'Oxlong'
         response = meme_answer
         await message.channel.send(response)
-    
+
     await bot.process_commands(message)
-    
+
 @bot.event
 async def on_command_error(ctx,error):
     if isinstance(error, CommandNotFound):
@@ -88,7 +73,7 @@ async def on_command_error(ctx,error):
 async def leave(ctx):
     voice_client = ctx.message.guild.voice_client
     if ctx.author.voice is None:
-        return await ctx.send("`You are not connected to a voice channel`")  
+        return await ctx.send("`You are not connected to a voice channel`")
     elif voice_client.is_connected():
         await voice_client.disconnect()
     else:
@@ -99,8 +84,8 @@ async def pause(ctx):
     server = ctx.message.guild
     voice_channel = server.voice_client
     if not voice_channel.is_playing():
-        await ctx.send('`No music is playing`') 
-    else:               
+        await ctx.send('`No music is playing`')
+    else:
         voice_channel.pause()
         await ctx.send('`Music paused`')
 
@@ -108,17 +93,17 @@ async def pause(ctx):
 async def resume(ctx):
     server = ctx.message.guild
     voice_channel = server.voice_client
-    if voice_channel.is_paused():             
+    if voice_channel.is_paused():
         voice_channel.resume()
         await ctx.send('`Music resumed`')
     else:
         await ctx.send('`Nothing to resume!`')
 
 @bot.command(name = 'skip')
-async def resume(ctx):
+async def skip(ctx):
     server = ctx.message.guild
     voice_channel = server.voice_client
-    if voice_channel.is_playing():             
+    if voice_channel.is_playing():
         voice_channel.stop()
         await ctx.send('`Music skipped`')
     else:
@@ -134,7 +119,7 @@ async def resume(ctx):
 #        await ctx.send(x)
 #    else:
 #       return await ctx.send('Please select a valid number from the following: \n[20]')
-   
+
 @bot.command(name = 'roll')
 async def roll(ctx, arg):
     arg = str(arg) + 't'
@@ -151,7 +136,7 @@ async def cast(ctx, *args):
     arguments = ' '.join(args)
     spellName = str(arguments).lower()
     spellName = spellName.replace(" ", "")
-    if PF.index.str.contains(spellName, case=False).any(): 
+    if PF.index.str.contains(spellName, case=False).any():
         #await ctx.send(str(df.loc[spellName]))
         list = ''
         for name, values in PF.loc[spellName].items():
@@ -174,7 +159,7 @@ async def cast(ctx, *args):
     arguments = ' '.join(args)
     spellName = str(arguments).lower()
     spellName = spellName.replace(" ", "")
-    if DND.index.str.contains(spellName, case=False).any(): 
+    if DND.index.str.contains(spellName, case=False).any():
         #await ctx.send(str(df.loc[spellName]))
         list = ''
         for name, values in DND.loc[spellName].items():
