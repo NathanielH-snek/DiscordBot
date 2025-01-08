@@ -164,7 +164,7 @@ class Music(commands.Cog):
                                 try:
                                     source = await discord.FFmpegOpusAudio.from_probe(url2, **FFMPEG_OPTIONS)
                                 except Exception as e:
-                                    await ctx.send(f"Failed to load audio source: {e}")
+                                    await ctx.send(f"`Failed to load audio source: {e}`")
                                     print(f"FFmpeg failed to load the source: {e}")
                                     continue
                                 playlist = self.playlists.get(ctx.guild.id, Playlist(ctx.guild.id))
@@ -179,7 +179,7 @@ class Music(commands.Cog):
                                 try:
                                     source = await discord.FFmpegOpusAudio.from_probe(url2, **FFMPEG_OPTIONS)
                                 except Exception as e:
-                                    await ctx.send(f"Failed to load audio source: {e}")
+                                    await ctx.send(f"`Failed to load audio source: {e}`")
                                     print(f"FFmpeg failed to load the source: {e}")
                                     continue
                                 playlist = self.playlists.get(ctx.guild.id, Playlist(ctx.guild.id))
@@ -190,6 +190,7 @@ class Music(commands.Cog):
                                 self.bot.dispatch("play_command", ctx)
                         except Exception as e:
                             print(f"Adding Song Failed: {e}")
+                            continue
                 else:
                     print("[DEBUG] Went to formats")
                     url2 = info['url']
@@ -197,7 +198,7 @@ class Music(commands.Cog):
                     try:
                         source = await discord.FFmpegOpusAudio.from_probe(url2, **FFMPEG_OPTIONS)
                     except Exception as e:
-                        await ctx.send(f"Failed to load audio source: {e}")
+                        await ctx.send(f"`Failed to load audio source: {e}`")
                         print(f"FFmpeg failed to load the source: {e}")
                     playlist = self.playlists.get(ctx.guild.id, Playlist(ctx.guild.id))
                     self.playlists[ctx.guild.id] = playlist

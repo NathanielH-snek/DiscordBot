@@ -11,14 +11,14 @@ from discord.ext.commands import CommandNotFound
 from dotenv import load_dotenv
 from spellchecker import SpellChecker
 
-from utils import Music, Playlist
-
 PF = pd.read_pickle("spells.pkl")
 
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
-GUILD = os.getenv('DISCORD_GUILD')
-
+#os.environ.clear()
+load_dotenv(override=True)
+TOKEN = os.getenv('DISCORD_TOKEN_TR')
+#TOKEN = os.getenv('DISCORD_TOKEN_IX')
+#GUILD = os.getenv('DISCORD_GUILD_IX')
+#GUILD = os.getenv('DISCORD_GUILD_TR')
 intents = discord.Intents().all()
 intents.members = True
 bot = commands.Bot(command_prefix = '$', intents=intents)
@@ -35,7 +35,7 @@ handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'
 async def setup(bot):
     #await bot.add_cog(Music(bot))
     await bot.load_extension("utils")
-    
+
 #Startup Tasks, Prints Connected Guild(s) and User(s) in guilds, also loads opus
 @bot.event
 async def on_ready():
